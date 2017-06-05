@@ -1,6 +1,6 @@
 
 #include "rm.h"
-
+#include <stdlib.h>
 #include <algorithm>
 #include <cstring>
 

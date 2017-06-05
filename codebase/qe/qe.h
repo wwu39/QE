@@ -39,6 +39,12 @@ class Iterator {
         virtual RC getNextTuple(void *data) = 0;
         virtual void getAttributes(vector<Attribute> &attrs) const = 0;
         virtual ~Iterator() {};
+        vector<Attribute> attrs;
+        string tableName;
+        RID rid;
+
+
+
 };
 
 
@@ -193,6 +199,8 @@ class IndexScan : public Iterator
 class Filter : public Iterator {
     // Filter operator
     public:
+        Iterator *baseIterator;
+        Condition baseCondition;
         Filter(Iterator *input,               // Iterator of input R
                const Condition &condition     // Selection condition
         );
@@ -201,6 +209,12 @@ class Filter : public Iterator {
         RC getNextTuple(void *data);
         // For attribute in vector<Attribute>, name it as rel.attr
         void getAttributes(vector<Attribute> &attrs) const;
+
+    bool checkSatisfyCondition(void *nextTuple);
+
+    int get_base_attribute();
+
+    int get_base_attribute(string attributeName);
 };
 
 
