@@ -1,5 +1,6 @@
 
 #include "rm.h"
+#include "../ix/ix.h"
 
 #include <algorithm>
 #include <cstring>
@@ -860,7 +861,50 @@ RC RM_ScanIterator::close()
 // asgn4 spec
 RC RelationManager::createIndex(const string &tableName, const string &attributeName)
 {
-	return -1;
+    int rc = 0;
+
+    // create index file
+    IndexManager* ixm = IndexManager::instance();
+    string ixFileName = tableName + "_" + attributeName + "_idx";
+    rc = ixm->createFile(ixFileName); // create index file
+    if (rc) return rc;
+
+    // open index file
+    IXFileHandle ixfh;
+    rc = ixm->openFile(ixFileName, ixfh);
+    if (rc) return rc;
+
+    // get attr
+    Attribute ixAttr;
+    vector<Attribute> attrs;
+    rc = getAttributes(tableName, attrs);
+    if (rc) return rc;
+    for (size_t i = 0; i < attrs.size(); ++i) {
+        if (attributeName == attrs[i].name) {
+            ixAttr = attrs[i];
+            break;
+        }
+    }
+
+    // scan through the table on attributeName
+    RM_ScanIterator rmsi;
+    RID rid;
+    void * key = malloc(PAGE_SIZE);
+    vector<string> projAttrs;
+    projAttrs.push_back(attributeName);
+    // SELECT attributeName FROM tableName
+    // WHERE attributeName NO_OP NULL;
+    rc = scan(tableName, attributeName, NO_OP, NULL, projAttrs, rmsi);
+    
+    // insert indexed keys
+    while(rmsi.getNextTuple(rid, key) != RM_EOF) {
+        rc = ixm->insertEntry(ixfh, ixAttr, key, rid);
+        if (rc) return rc;
+    }
+
+    // close file
+    rc = ixm->closeFile(ixfh);
+	return SUCCESS;
 }
 
 RC RelationManager::destroyIndex(const string &tableName, const string &attributeName)
