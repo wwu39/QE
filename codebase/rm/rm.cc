@@ -1,6 +1,5 @@
 
 #include "rm.h"
-#include "../ix/ix.h"
 
 #include <algorithm>
 #include <cstring>
@@ -18,10 +17,12 @@ RelationManager* RelationManager::instance()
 RelationManager::RelationManager()
 : tableDescriptor(createTableDescriptor()), columnDescriptor(createColumnDescriptor())
 {
+    ixm = IndexManager::instance();
 }
 
 RelationManager::~RelationManager()
 {
+    delete ixm;
 }
 
 RC RelationManager::createCatalog()
@@ -864,7 +865,6 @@ RC RelationManager::createIndex(const string &tableName, const string &attribute
     int rc = 0;
 
     // create index file
-    IndexManager* ixm = IndexManager::instance();
     string ixFileName = tableName + "_" + attributeName + "_idx";
     rc = ixm->createFile(ixFileName); // create index file
     if (rc) return rc;
@@ -909,13 +909,15 @@ RC RelationManager::createIndex(const string &tableName, const string &attribute
     // close file
     rc = ixm->closeFile(ixfh);
     free(key);
-    delete ixm;
 	return SUCCESS;
 }
 
 RC RelationManager::destroyIndex(const string &tableName, const string &attributeName)
 {
-	return -1;
+    string ixFileName = tableName + "_" + attributeName + "_idx";
+    int rc = ixm->destroyFile(ixFileName);
+    if (rc) return rc;
+	return SUCCESS;
 }
 
 RC RelationManager::indexScan(const string &tableName,
@@ -926,5 +928,37 @@ RC RelationManager::indexScan(const string &tableName,
                       bool highKeyInclusive,
                       RM_IndexScanIterator &rm_IndexScanIterator)
 {
-	return -1;
+    int rc = 0;
+
+    // get attr
+    Attribute ixAttr;
+    vector<Attribute> attrs;
+    rc = getAttributes(tableName, attrs);
+    if (rc) return rc;
+    for (size_t i = 0; i < attrs.size(); ++i) {
+        if (attributeName == attrs[i].name) {
+            ixAttr = attrs[i];
+            break;
+        }
+    }
+    
+    // pass the work to ix scan
+    string ixFileName = tableName + "_" + attributeName + "_idx";
+    rm_IndexScanIterator.ixm->openFile(ixFileName, rm_IndexScanIterator.ixfh);
+    rc = rm_IndexScanIterator.ixm->scan(rm_IndexScanIterator.ixfh, 
+            ixAttr, lowKey, highKey, lowKeyInclusive, 
+            highKeyInclusive, rm_IndexScanIterator.ixsi);
+    if (rc) return rc;
+	return SUCCESS;
+}
+
+RC RM_IndexScanIterator::getNextEntry(RID &rid, void *key)
+{
+    return ixsi.getNextEntry(rid, key);
+}
+
+RC RM_IndexScanIterator::close()
+{
+    ixm->closeFile(ixfh);
+    return SUCCESS;
 }

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "../rbf/rbfm.h"
+#include "../ix/ix.h"
 
 using namespace std;
 
@@ -49,12 +50,16 @@ using namespace std;
 // RM_IndexScanIterator is an iterator to go through index entries
 class RM_IndexScanIterator {
  public:
-  RM_IndexScanIterator() {};  	// Constructor
-  ~RM_IndexScanIterator() {}; 	// Destructor
+  IX_ScanIterator ixsi;
+  IXFileHandle ixfh;
+  IndexManager * ixm;
+  
+  RM_IndexScanIterator() { ixm = IndexManager::instance(); };  	// Constructor
+  ~RM_IndexScanIterator() { delete ixm; }; 	// Destructor
 
   // "key" follows the same format as in IndexManager::insertEntry()
-  RC getNextEntry(RID &rid, void *key) {return RM_EOF;};  	// Get next matching entry
-  RC close() {return -1;};             			// Terminate index scan
+  RC getNextEntry(RID &rid, void *key);  	// Get next matching entry
+  RC close();             			// Terminate index scan
 };
 
 typedef struct IndexedAttr
@@ -138,6 +143,7 @@ protected:
 
 private:
   static RelationManager *_rm;
+  IndexManager * ixm; // static??
   const vector<Attribute> tableDescriptor;
   const vector<Attribute> columnDescriptor;
 
