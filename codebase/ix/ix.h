@@ -89,9 +89,10 @@ typedef struct MetaHeader
 
 class IX_ScanIterator;
 class IXFileHandle;
+class RelationManager;
 
 class IndexManager {
-
+    friend class RelationManager;
     public:
         static IndexManager* instance();
 

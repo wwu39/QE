@@ -898,12 +898,18 @@ RC RelationManager::createIndex(const string &tableName, const string &attribute
     
     // insert indexed keys
     while(rmsi.getNextTuple(rid, key) != RM_EOF) {
-        rc = ixm->insertEntry(ixfh, ixAttr, key, rid);
-        if (rc) return rc;
+        char isNull;
+        memcpy(&isNull, key, 1); // first byte is NI
+        if (!isNull) {
+            rc = ixm->insertEntry(ixfh, ixAttr, (char *)key + 1, rid);
+            if (rc) return rc;
+        }
     }
 
     // close file
     rc = ixm->closeFile(ixfh);
+    free(key);
+    delete ixm;
 	return SUCCESS;
 }
 
