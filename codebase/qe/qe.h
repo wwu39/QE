@@ -39,13 +39,6 @@ class Iterator {
         virtual RC getNextTuple(void *data) = 0;
         virtual void getAttributes(vector<Attribute> &attrs) const = 0;
         virtual ~Iterator() {};
-        virtual vector<Attribute> getOriAttr() const = 0;
-    protected: // helper accessable by derived class
-        int getNullIndicatorSize(int fieldCount);
-        bool fieldIsNull(char *nullIndicator, int i);
-        bool getValueByAttrName(const vector<Attribute> &attrs, const string &attrName, const void * tuple, void * value);
-        int keyCompare(const Attribute& attr, const void * key1, const void * key2);
-        bool satisfyCondition(const Attribute& attr, const void * value1, const void * value2, CompOp op);
 };
 
 
@@ -118,12 +111,6 @@ class TableScan : public Iterator
         {
         	iter->close();
         };
-
-        // get original attribute without "tableName." in front
-        vector<Attribute> getOriAttr() const
-        {
-            return this->attrs;
-        }
 };
 
 
@@ -200,24 +187,11 @@ class IndexScan : public Iterator
         {
             iter->close();
         };
-
-        // get original attribute without "tableName." in front
-        vector<Attribute> getOriAttr() const
-        {
-            return this->attrs;
-        }
 };
 
 
 class Filter : public Iterator {
     // Filter operator
-    private:
-        Iterator *input;
-        Condition condition;
-        vector<Attribute> attrs;
-        Attribute condAttr;
-        char lhsValue[PAGE_SIZE];
-        char rhsValue[PAGE_SIZE];
     public:
         Filter(Iterator *input,               // Iterator of input R
                const Condition &condition     // Selection condition
@@ -227,15 +201,10 @@ class Filter : public Iterator {
         RC getNextTuple(void *data);
         // For attribute in vector<Attribute>, name it as rel.attr
         void getAttributes(vector<Attribute> &attrs) const;
-        vector<Attribute> getOriAttr() const { return this->attrs; };
 };
 
 
 class Project : public Iterator {
-    private:
-        Iterator *input;
-        vector<Attribute> attrs;
-        vector<Attribute> projAttrs;
     // Projection operator
     public:
         Project(Iterator *input,                    // Iterator of input R
@@ -245,7 +214,6 @@ class Project : public Iterator {
         RC getNextTuple(void *data);
         // For attribute in vector<Attribute>, name it as rel.attr
         void getAttributes(vector<Attribute> &attrs) const;
-        vector<Attribute> getOriAttr() const { return this->attrs; };
 };
 
 class BNLJoin : public Iterator {
@@ -266,11 +234,6 @@ class BNLJoin : public Iterator {
 
 
 class INLJoin : public Iterator {
-    private:
-        Iterator *leftIn;
-        IndexScan *rightIn;
-        Condition condition;
-        vector<Attribute> attrs;
     // Index nested-loop join operator
     public:
         INLJoin(Iterator *leftIn,           // Iterator of input R
@@ -282,7 +245,6 @@ class INLJoin : public Iterator {
         RC getNextTuple(void *data);
         // For attribute in vector<Attribute>, name it as rel.attr
         void getAttributes(vector<Attribute> &attrs) const;
-        vector<Attribute> getOriAttr() const { return this->attrs; };
 };
 
 // Optional for everyone. 10 extra-credit points
