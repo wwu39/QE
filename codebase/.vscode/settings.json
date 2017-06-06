@@ -12,6 +12,7 @@
         "type_traits": "cpp",
         "xlocmon": "cpp",
         "xlocnum": "cpp",
-        "xloctime": "cpp"
+        "xloctime": "cpp",
+        "xmemory0": "cpp"
     }
 }

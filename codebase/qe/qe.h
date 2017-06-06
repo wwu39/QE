@@ -34,8 +34,15 @@ struct Condition {
 
 
 class Iterator {
-    // All the relational operators and access methods are iterators.
     public:
+        RID rid;
+        string tableName;
+
+        // helper accessable by children
+        int keyCompare(const AttrType type, const void * key1, const void * key2);
+        bool satisfyCondition(const AttrType type, const void * value1, const void * value2, CompOp op);
+
+    // All the relational operators and access methods are iterators.
         virtual RC getNextTuple(void *data) = 0;
         virtual void getAttributes(vector<Attribute> &attrs) const = 0;
         virtual ~Iterator() {};
@@ -48,10 +55,8 @@ class TableScan : public Iterator
     public:
         RelationManager &rm;
         RM_ScanIterator *iter;
-        string tableName;
         vector<Attribute> attrs;
         vector<string> attrNames;
-        RID rid;
 
         TableScan(RelationManager &rm, const string &tableName, const char *alias = NULL):rm(rm)
         {
@@ -120,11 +125,9 @@ class IndexScan : public Iterator
     public:
         RelationManager &rm;
         RM_IndexScanIterator *iter;
-        string tableName;
         string attrName;
         vector<Attribute> attrs;
         char key[PAGE_SIZE];
-        RID rid;
 
         IndexScan(RelationManager &rm, const string &tableName, const string &attrName, const char *alias = NULL):rm(rm)
         {
@@ -193,6 +196,13 @@ class IndexScan : public Iterator
 class Filter : public Iterator {
     // Filter operator
     public:
+        RelationManager * rm;
+        Iterator * input;
+        Condition condition;
+        char lhsValue[PAGE_SIZE];
+        char rhsValue[PAGE_SIZE];
+        AttrType type;
+
         Filter(Iterator *input,               // Iterator of input R
                const Condition &condition     // Selection condition
         );
