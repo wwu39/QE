@@ -202,6 +202,8 @@ class Filter : public Iterator {
         char lhsValue[PAGE_SIZE];
         char rhsValue[PAGE_SIZE];
         AttrType type;
+        string leftAttrNameNoTbl; // attribute name without table suffix
+        string rightAttrNameNoTbl; // attribute name without table suffix
 
         Filter(Iterator *input,               // Iterator of input R
                const Condition &condition     // Selection condition

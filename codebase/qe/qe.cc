@@ -72,6 +72,11 @@ Filter::Filter(Iterator* input, const Condition &condition) {
             break;
         }
     }
+
+    leftAttrNameNoTbl = condition.lhsAttr.substr(tableName.size() + 1);
+    if (condition.bRhsIsAttr) {
+        rightAttrNameNoTbl = condition.rhsAttr.substr(tableName.size() + 1);
+    }
 }
 
 Filter::~Filter() {
@@ -81,15 +86,13 @@ Filter::~Filter() {
 RC Filter::getNextTuple(void *data) {
     while(1) {
         if (input->getNextTuple(data)) return QE_EOF;
-        rm->readAttribute(tableName, input->rid, condition.lhsAttr, lhsValue);
+        rm->readAttribute(tableName, input->rid, leftAttrNameNoTbl, lhsValue);
         // NO_OP is always true
         if (condition.op == NO_OP) return SUCCESS;
         // lhs attr value is null
-        char a = lhsValue[0];
-        cout << (int) a << endl;
-        if (!lhsValue[0]) return QE_EOF;
+        if (lhsValue[0]) return QE_EOF;
         if (condition.bRhsIsAttr) {
-            rm->readAttribute(tableName, input->rid, condition.rhsAttr, rhsValue);
+            rm->readAttribute(tableName, input->rid, rightAttrNameNoTbl, rhsValue);
             if (!rhsValue[0]) continue; // if rhs attr is null, fetch next tuple
             if (satisfyCondition(type, lhsValue + 1, rhsValue + 1, condition.op)) return SUCCESS;
             else continue;
