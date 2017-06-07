@@ -219,6 +219,12 @@ class Filter : public Iterator {
 class Project : public Iterator {
     // Projection operator
     public:
+        RecordBasedFileManager * rbf;
+        FileHandle fileHandle;        
+        RBFM_ScanIterator rbfmsi;
+        string tempFileName;
+        vector<Attribute> projAttrs;
+
         Project(Iterator *input,                    // Iterator of input R
               const vector<string> &attrNames);   // vector containing attribute names
         ~Project();
