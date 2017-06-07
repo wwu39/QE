@@ -34,15 +34,8 @@ struct Condition {
 
 
 class Iterator {
-    public:
-        RID rid;
-        string tableName;
-
-        // helper accessable by children
-        int keyCompare(const AttrType type, const void * key1, const void * key2);
-        bool satisfyCondition(const AttrType type, const void * value1, const void * value2, CompOp op);
-
     // All the relational operators and access methods are iterators.
+    public:
         virtual RC getNextTuple(void *data) = 0;
         virtual void getAttributes(vector<Attribute> &attrs) const = 0;
         virtual ~Iterator() {};
@@ -57,6 +50,8 @@ class TableScan : public Iterator
         RM_ScanIterator *iter;
         vector<Attribute> attrs;
         vector<string> attrNames;
+        RID rid;
+        string tableName;
 
         TableScan(RelationManager &rm, const string &tableName, const char *alias = NULL):rm(rm)
         {
@@ -127,6 +122,8 @@ class IndexScan : public Iterator
         RM_IndexScanIterator *iter;
         string attrName;
         vector<Attribute> attrs;
+        RID rid;
+        string tableName;
         char key[PAGE_SIZE];
 
         IndexScan(RelationManager &rm, const string &tableName, const string &attrName, const char *alias = NULL):rm(rm)
@@ -196,14 +193,11 @@ class IndexScan : public Iterator
 class Filter : public Iterator {
     // Filter operator
     public:
-        RelationManager * rm;
-        Iterator * input;
-        Condition condition;
-        char lhsValue[PAGE_SIZE];
-        char rhsValue[PAGE_SIZE];
-        AttrType type;
-        string leftAttrNameNoTbl; // attribute name without table suffix
-        string rightAttrNameNoTbl; // attribute name without table suffix
+        RecordBasedFileManager * rbf;
+        FileHandle fileHandle;        
+        RBFM_ScanIterator rbfmsi;
+        string tempFileName;
+        vector<Attribute> recordDescriptor;
 
         Filter(Iterator *input,               // Iterator of input R
                const Condition &condition     // Selection condition
