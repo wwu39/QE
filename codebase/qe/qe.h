@@ -34,6 +34,9 @@ struct Condition {
 
 
 class Iterator {
+    protected:
+        int keyCompare(const AttrType type, const void * key1, const void * key2);
+        bool satisfyCondition(const AttrType type, const void * value1, const void * value2, CompOp op);
     // All the relational operators and access methods are iterators.
     public:
         virtual RC getNextTuple(void *data) = 0;
@@ -198,6 +201,12 @@ class Filter : public Iterator {
         RBFM_ScanIterator rbfmsi;
         string tempFileName;
         vector<Attribute> recordDescriptor;
+        Condition cond;
+        char lhsData[PAGE_SIZE];
+        char rhsData[PAGE_SIZE];
+        AttrType ltype;
+        AttrType rtype;
+        RID rid;
 
         Filter(Iterator *input,               // Iterator of input R
                const Condition &condition     // Selection condition
@@ -218,6 +227,7 @@ class Project : public Iterator {
         RBFM_ScanIterator rbfmsi;
         string tempFileName;
         vector<Attribute> projAttrs;
+        RID rid;
 
         Project(Iterator *input,                    // Iterator of input R
               const vector<string> &attrNames);   // vector containing attribute names
@@ -246,8 +256,26 @@ class BNLJoin : public Iterator {
 
 
 class INLJoin : public Iterator {
+    private:
+    
+        bool fieldIsNull(char *nullIndicator, int i);
+        void setFieldNull(char *nullIndicator, int i);
+        int getNullIndicatorSize(int fieldCount);
+    
     // Index nested-loop join operator
     public:
+        RecordBasedFileManager * rbf;
+        FileHandle fileHandle;        
+        RBFM_ScanIterator rbfmsi;
+        string tempFileName;
+        vector<Attribute> recordDescriptor;
+        Condition cond;
+        char lhsData[PAGE_SIZE];
+        char rhsData[PAGE_SIZE];
+        AttrType ltype;
+        AttrType rtype;
+        RID rid;
+
         INLJoin(Iterator *leftIn,           // Iterator of input R
                IndexScan *rightIn,          // IndexScan Iterator of input S
                const Condition &condition   // Join condition

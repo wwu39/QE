@@ -42,10 +42,21 @@ using namespace std;
 // 1 null byte, 4 integer fields and a varchar
 #define COLUMNS_RECORD_DATA_SIZE 1 + 5 * INT_SIZE + COLUMNS_COL_COLUMN_NAME_SIZE
 
+#define INDEXES_TABLE_NAME           "Indexes"
+#define INDEXES_TABLE_ID             3
+#define INDEXES_COL_TABLE_NAME       "table-name"
+#define INDEXES_COL_ATTR_NAME        "attr-name"
+#define INDEXES_COL_TABLE_NAME_SIZE  50
+#define INDEXES_COL_ATTR_NAME_SIZE   50
+
+#define INDEXES_RECORD_DATA_SIZE     109
+
 # define RM_EOF (-1)  // end of a scan operator
 
 #define RM_CANNOT_MOD_SYS_TBL 1
 #define RM_NULL_COLUMN        2
+
+typedef enum { INSERT = 0, DELETE } IXOP;
 
 // RM_IndexScanIterator is an iterator to go through index entries
 class RM_IndexScanIterator {
@@ -91,21 +102,21 @@ class RelationManager
 public:
   static RelationManager* instance();
 
-  RC createCatalog();
+  RC createCatalog(); // add indexes component
 
-  RC deleteCatalog();
+  RC deleteCatalog(); // add indexes component
 
   RC createTable(const string &tableName, const vector<Attribute> &attrs);
 
-  RC deleteTable(const string &tableName);
+  RC deleteTable(const string &tableName); // remove all indexes of given table
 
   RC getAttributes(const string &tableName, vector<Attribute> &attrs);
 
-  RC insertTuple(const string &tableName, const void *data, RID &rid);
+  RC insertTuple(const string &tableName, const void *data, RID &rid); // insert indexes after insert tuple
 
-  RC deleteTuple(const string &tableName, const RID &rid);
+  RC deleteTuple(const string &tableName, const RID &rid); // delete indexes before delete tuple
 
-  RC updateTuple(const string &tableName, const void *data, const RID &rid);
+  RC updateTuple(const string &tableName, const void *data, const RID &rid); // delete indexes before update, insert indexes after update
 
   RC readTuple(const string &tableName, const RID &rid, void *data);
 
@@ -146,6 +157,7 @@ private:
   IndexManager * ixm; // static??
   const vector<Attribute> tableDescriptor;
   const vector<Attribute> columnDescriptor;
+  const vector<Attribute> indexDescriptor;
 
   // Convert tableName to file name (append extension)
   static string getFileName(const char *tableName);
@@ -154,6 +166,7 @@ private:
   // Create recordDescriptor for Table/Column tables
   static vector<Attribute> createTableDescriptor();
   static vector<Attribute> createColumnDescriptor();
+  static vector<Attribute> createIndexDescriptor();
 
   // Prepare an entry for the Table/Column table
   void prepareTablesRecordData(int32_t id, bool system, const string &tableName, void *data);
@@ -182,6 +195,10 @@ private:
   void toAPI(const int32_t integer, void *data);
   void toAPI(const string &str, void *data);
 
+
+  //asg 4 spec
+  RC indexOperation(const string &tableName, const vector<Attribute> &recordDescriptor, const RID &rid, const IXOP op); // insert/delete all indexes of given table
+  RC deleteIndexesOf(const string &tableName); // remove indexes of given table from index catalog and actual files
 };
 
 #endif
