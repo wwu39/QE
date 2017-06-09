@@ -1,24 +1,45 @@
 1. Basic information
-Team number (e.g., 01) : 
-#1 Student Name :  
-#2 Student Name : 
+Team number (e.g., 01) : 31
+#1 Student ID : 1498457
+#1 Student Name : Weikai Wu
+#2 Student ID : 1499215
+#2 Student Name : Daniel Martinez
+#3 Student ID : 1317305
+#3 Student Name : Abraham Chavez
 
 
 2. Catalog information about Index
 - Show your catalog information about an index (table, column, etc.). 
-
+Index catalog is store into a file call Indexes.t
+It's registered in Tables.t with table-id=3, table-name=Indexes, file-name=Indexes.t
+It only has 2 columns: table-name and attr-name, and they are registered in Columns.t
+We didn't store index filenames because table-name and attr-name can indicate filename.
+filename format: table-name_attr-name_idx.
+When create an index, its information is inserted to Indexes.t.
+When destroy an index, its information is deleted from Indexes.t.
+When insert/delete/update a tuple, scan though Indexes.t to find all associate index files and insert/delete/update entry of them respectively.
+When delete a table, scan though Indexes.t to find all associate index files and delete all of them. Also delete register information in Indexes.t.
 
 3. Index Nested-Loop Join
 - Describe how your Index Nested-Loop Join works.
-
+First store tuples of rightIn into a temp rb file.
+while leftIn->getNextTuple(ltuple) is not QE_EOF:
+    scan the temp rb file
+    while scan_iter.getNextTuple(rtuple) is not RBMF_EOF:
+	join ltuple and rtuple
+	insert result into another temp rb file
+When joining finishes, destroy rightIn temp rb file.
+When operation finishes, destroy result temp rb file.
 
 4. Implementation Detail
 - Have you added your own source file (.cc or .h)?
+No
 
 - Have you implemented any optional features? Then, describe them here.
+No
 
 - Other implementation details:
-
+None.
 
 5. Other (optional)
 - Freely use this section to tell us about things that are related to Project 4, but not related to the other sections (optional)
